@@ -1,166 +1,210 @@
-<p align="center">
-  <img src="assets/logo.jpg" width="200"/>
-</p>
-
-English | [中文](README_zh.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
-
-[![GitHub stars](https://img.shields.io/github/stars/mannaandpoem/OpenManus?style=social)](https://github.com/mannaandpoem/OpenManus/stargazers)
-&ensp;
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) &ensp;
-[![Discord Follow](https://dcbadge.vercel.app/api/server/DYn29wFk9z?style=flat)](https://discord.gg/DYn29wFk9z)
 
 # 👋 OpenManus
 
-Manus is incredible, but OpenManus can achieve any idea without an *Invite Code* 🛫!
+Manus est un agent d'intelligence artificielle révolutionnaire qui, grâce à son architecture modulaire, permet de transformer des réponses générées par un modèle de langage (LLM) en actions concrètes. Contrairement à d'autres agents qui se limitent à la réponse textuelle, OpenManus orchestre l'exécution d'outils spécialisés (ex. : génération de code, visualisation via navigateur) pour créer un résultat tangible.
 
-Our team members [@Xinbin Liang](https://github.com/mannaandpoem) and [@Jinyu Xiang](https://github.com/XiangJinyu) (core authors), along with [@Zhaoyang Yu](https://github.com/MoshiQAQ), [@Jiayi Zhang](https://github.com/didiforgithub), and [@Sirui Hong](https://github.com/stellaHSR), we are from [@MetaGPT](https://github.com/geekan/MetaGPT). The prototype is launched within 3 hours and we are keeping building!
+L'objectif de ce projet est de permettre à chacun de déployer, comprendre et personnaliser un agent IA performant, tout en se basant sur une documentation détaillée de son fonctionnement interne.
 
-It's a simple implementation, so we welcome any suggestions, contributions, and feedback!
+---
 
-Enjoy your own agent with OpenManus!
+## Table des Matières
 
-We're also excited to introduce [OpenManus-RL](https://github.com/OpenManus/OpenManus-RL), an open-source project dedicated to reinforcement learning (RL)- based (such as GRPO) tuning methods for LLM agents, developed collaboratively by researchers from UIUC and OpenManus.
+- [Démo du Projet](#démo-du-projet)
+- [Installation](#installation)
+  - [Méthode 1 : Utilisation de conda](#méthode-1--utilisation-de-conda)
+  - [Méthode 2 : Utilisation de uv (recommandée)](#méthode-2--utilisation-de-uv-recommandée)
+- [Configuration](#configuration)
+- [Démarrage Rapide](#démarrage-rapide)
+- [Reverse Engineering du Workflow d'Exécution de Manus](#reverse-engineering-du-workflow-dexécution-de-manus)
+  - [Workflow Global](#workflow-global)
+  - [Analyse Technique du Module `toolcall.py`](#analyse-technique-du-module-toolcallpy)
+- [Création et Personnalisation de Votre Propre Agent](#création-et-personnalisation-de-votre-propre-agent)
+- [Contribuer](#contribuer)
+- [Communauté](#communauté)
+- [Historique des Étoiles](#historique-des-étoiles)
+- [Citer](#citer)
 
-## Project Demo
+---
 
-<video src="https://private-user-images.githubusercontent.com/61239030/420168772-6dcfd0d2-9142-45d9-b74e-d10aa75073c6.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDEzMTgwNTksIm5iZiI6MTc0MTMxNzc1OSwicGF0aCI6Ii82MTIzOTAzMC80MjAxNjg3NzItNmRjZmQwZDItOTE0Mi00NWQ5LWI3NGUtZDEwYWE3NTA3M2M2Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAzMDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMzA3VDAzMjIzOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjFkNjlmYWNjMmEzOTliM2Y3M2VlYjgyNDRlZDJmOWE3NWZhZjE1MzhiZWY4YmQ3NjdkNTYwYTU5ZDA2MzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.UuHQCgWYkh0OQq9qsUWqGsUbhG3i9jcZDAMeHjLt5T4" data-canonical-src="https://private-user-images.githubusercontent.com/61239030/420168772-6dcfd0d2-9142-45d9-b74e-d10aa75073c6.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDEzMTgwNTksIm5iZiI6MTc0MTMxNzc1OSwicGF0aCI6Ii82MTIzOTAzMC80MjAxNjg3NzItNmRjZmQwZDItOTE0Mi00NWQ5LWI3NGUtZDEwYWE3NTA3M2M2Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAzMDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMzA3VDAzMjIzOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjFkNjlmYWNjMmEzOTliM2Y3M2VlYjgyNDRlZDJmOWE3NWZhZjE1MzhiZWY4YmQ3NjdkNTYwYTU5ZDA2MzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.UuHQCgWYkh0OQq9qsUWqGsUbhG3i9jcZDAMeHjLt5T4" controls="controls" muted="muted" class="d-block rounded-bottom-2 border-top width-fit" style="max-height:640px; min-height: 200px"></video>
+## Démo du Projet
+
+<video src="https://private-user-images.githubusercontent.com/61239030/420168772-6dcfd0d2-9142-45d9-b74e-d10aa75073c6.mp4" controls muted class="d-block rounded-bottom-2 border-top width-fit" style="max-height:640px; min-height: 200px"></video>
+
+---
 
 ## Installation
 
-We provide two installation methods. Method 2 (using uv) is recommended for faster installation and better dependency management.
+### Méthode 1 : Utilisation de conda
 
-### Method 1: Using conda
+1. Créez un nouvel environnement conda :
+   ```bash
+   conda create -n open_manus python=3.12
+   conda activate open_manus
+   ```
 
-1. Create a new conda environment:
+2. Clonez le dépôt :
+   ```bash
+   git clone https://github.com/mannaandpoem/OpenManus.git
+   cd OpenManus
+   ```
 
-```bash
-conda create -n open_manus python=3.12
-conda activate open_manus
-```
+3. Installez les dépendances :
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2. Clone the repository:
+### Méthode 2 : Utilisation de uv (Recommandée)
 
-```bash
-git clone https://github.com/mannaandpoem/OpenManus.git
-cd OpenManus
-```
+1. Installez uv (un installateur Python rapide et résolveur de dépendances) :
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
-3. Install dependencies:
+2. Clonez le dépôt :
+   ```bash
+   git clone https://github.com/mannaandpoem/OpenManus.git
+   cd OpenManus
+   ```
 
-```bash
-pip install -r requirements.txt
-```
+3. Créez et activez un nouvel environnement virtuel :
+   ```bash
+   uv venv --python 3.12
+   source .venv/bin/activate  # Sur Unix/macOS
+   # Ou sur Windows :
+   # .venv\Scripts\activate
+   ```
 
-### Method 2: Using uv (Recommended)
+4. Installez les dépendances :
+   ```bash
+   uv pip install -r requirements.txt
+   ```
 
-1. Install uv (A fast Python package installer and resolver):
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-2. Clone the repository:
-
-```bash
-git clone https://github.com/mannaandpoem/OpenManus.git
-cd OpenManus
-```
-
-3. Create a new virtual environment and activate it:
-
-```bash
-uv venv --python 3.12
-source .venv/bin/activate  # On Unix/macOS
-# Or on Windows:
-# .venv\Scripts\activate
-```
-
-4. Install dependencies:
-
-```bash
-uv pip install -r requirements.txt
-```
+---
 
 ## Configuration
 
-OpenManus requires configuration for the LLM APIs it uses. Follow these steps to set up your configuration:
+OpenManus nécessite une configuration pour les API du LLM utilisé. Pour configurer votre environnement :
 
-1. Create a `config.toml` file in the `config` directory (you can copy from the example):
+1. Copiez le fichier de configuration exemple :
+   ```bash
+   cp config/config.example.toml config/config.toml
+   ```
 
-```bash
-cp config/config.example.toml config/config.toml
-```
+2. Modifiez `config/config.toml` pour ajouter vos clés API et personnaliser les paramètres :
+   ```toml
+   [llm]
+   model = "gpt-4o"
+   base_url = "https://api.openai.com/v1"
+   api_key = "sk-..."  # Remplacez par votre clé API
+   max_tokens = 4096
+   temperature = 0.0
 
-2. Edit `config/config.toml` to add your API keys and customize settings:
+   [llm.vision]
+   model = "gpt-4o"
+   base_url = "https://api.openai.com/v1"
+   api_key = "sk-..."  # Remplacez par votre clé API
+   ```
 
-```toml
-# Global LLM configuration
-[llm]
-model = "gpt-4o"
-base_url = "https://api.openai.com/v1"
-api_key = "sk-..."  # Replace with your actual API key
-max_tokens = 4096
-temperature = 0.0
+---
 
-# Optional configuration for specific LLM models
-[llm.vision]
-model = "gpt-4o"
-base_url = "https://api.openai.com/v1"
-api_key = "sk-..."  # Replace with your actual API key
-```
+## Démarrage Rapide
 
-## Quick Start
-
-One line for run OpenManus:
-
+Pour lancer OpenManus, exécutez simplement :
 ```bash
 python main.py
 ```
 
-Then input your idea via terminal!
-
-For unstable version, you also can run:
-
-```bash
-python run_flow.py
+Vous pouvez ensuite entrer votre commande dans le terminal, par exemple :
+```
+un site de ecommerce responsive avec du HTML CSS et JAVASCRIPT
 ```
 
-## How to contribute
+---
 
-We welcome any friendly suggestions and helpful contributions! Just create issues or submit pull requests.
+## Reverse Engineering du Workflow d'Exécution de Manus
 
-Or contact @mannaandpoem via 📧email: mannaandpoem@gmail.com
+Ce section décrit en détail comment OpenManus exécute une tâche, depuis la réception de la demande jusqu'à l'affichage du résultat, afin de mieux comprendre la chaîne d'opérations et vous permettre de créer votre propre agent.
 
-**Note**: Before submitting a pull request, please use the pre-commit tool to check your changes. Run `pre-commit run --all-files` to execute the checks.
+### Workflow Global
 
-## Community Group
-Join our networking group on Feishu and share your experience with other developers!
+1. **Initialisation**  
+   - **Configuration du Logging et Activation de la Télémétrie Anonyme**  
+     Au démarrage, OpenManus initialise le système de logging et active la télémétrie anonyme pour suivre l'exécution tout en garantissant la confidentialité.
 
-<div align="center" style="display: flex; gap: 20px;">
-    <img src="assets/community_group.jpg" alt="OpenManus 交流群" width="300" />
-</div>
+2. **Réception de la Demande**  
+   - **Saisie de la Commande Utilisateur**  
+     L'utilisateur saisit sa demande. Par exemple :
+     ```
+     un site de ecommerce responsive avec du HTML CSS et JAVASCRIPT
+     ```
 
-## Star History
+3. **Appel au Modèle de Langage (LLM)**  
+   - **Interrogation et Traitement**  
+     L'agent envoie l'historique des messages et un prompt système au LLM pour générer une réponse initiale. Ce processus inclut la gestion de la consommation de tokens pour chaque étape.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mannaandpoem/OpenManus&type=Date)](https://star-history.com/#mannaandpoem/OpenManus&Date)
+4. **Sélection et Activation des Outils**  
+   - **Choix de l'Outil Approprié**  
+     D'après la réponse du LLM, l'agent sélectionne un ou plusieurs outils à utiliser. Dans notre exemple :
+     - `python_execute` est d'abord activé pour générer le code HTML, CSS et JavaScript.
+   - **Exécution de l'Outil**  
+     L'outil sélectionné est exécuté, par exemple, pour créer un fichier HTML contenant le code généré.
 
-## Acknowledgement
+5. **Visualisation avec BrowserUse**  
+   - **Affichage du Résultat**  
+     Après l'exécution, l'outil `browser_use` est appelé pour ouvrir le fichier généré dans un navigateur, permettant à l'utilisateur de visualiser le résultat final.
 
-Thanks to [anthropic-computer-use](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo)
-and [browser-use](https://github.com/browser-use/browser-use) for providing basic support for this project!
+6. **Itération et Affinage (si nécessaire)**  
+   - **Processus Itératif**  
+     Selon la demande, l'agent peut poursuivre avec d'autres étapes pour affiner le résultat ou intégrer des modifications supplémentaires.
 
-Additionally, we are grateful to [AAAJ](https://github.com/metauto-ai/agent-as-a-judge), [MetaGPT](https://github.com/geekan/MetaGPT), [OpenHands](https://github.com/All-Hands-AI/OpenHands) and [SWE-agent](https://github.com/SWE-agent/SWE-agent).
+### Analyse Technique du Module `toolcall.py`
 
-OpenManus is built by contributors from MetaGPT. Huge thanks to this agent community!
+Le fichier `toolcall.py` joue un rôle crucial dans l'orchestration des appels aux outils. Voici les points essentiels :
 
-## Cite
-```bibtex
-@misc{openmanus2025,
-  author = {Xinbin Liang and Jinyu Xiang and Zhaoyang Yu and Jiayi Zhang and Sirui Hong},
-  title = {OpenManus: An open-source framework for building general AI agents},
-  year = {2025},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/mannaandpoem/OpenManus}},
-}
-```
+- **Héritage et Objectif**  
+  La classe `ToolCallAgent` hérite de `ReActAgent` et gère la transformation de la réponse du LLM en actions concrètes via des appels de fonctions (tool calls).
+
+- **Méthode `think`**  
+  - Ajoute un prompt de prochaine étape aux messages.
+  - Interroge le LLM via `ask_tool` en passant les messages, le prompt système et la liste des outils disponibles.
+  - Extrait et loggue les tool calls générés (les outils sélectionnés et leur ordre d'exécution).
+
+- **Méthode `act`**  
+  - Pour chaque appel d'outil, exécute la méthode `execute_tool`.
+  - Agrège les résultats et les enregistre dans la mémoire de l'agent pour constituer la réponse finale.
+  - Loggue l'issue de chaque appel d'outil avec des messages détaillés.
+
+- **Méthode `execute_tool`**  
+  - Valide et parse les arguments (au format JSON) de l'appel.
+  - Active l'outil correspondant à partir d'une collection d'outils disponibles.
+  - Gère les erreurs et formate le résultat pour l'afficher (ex. : « Observed output of cmd `python_execute` executed: ... »).
+
+- **Gestion des Outils Spéciaux**  
+  La méthode `_handle_special_tool` vérifie si un outil particulier (comme `Terminate`) nécessite un traitement spécial, par exemple pour terminer l'exécution de l'agent.
+
+Ces mécanismes, combinés aux logs détaillés (incluant la consommation de tokens et l'ordre des étapes), offrent une vision claire du fonctionnement interne d'OpenManus et facilitent le reverse engineering pour créer et personnaliser votre propre agent.
+
+---
+
+## Création et Personnalisation de Votre Propre Agent
+
+En vous appuyant sur l'analyse ci-dessus, vous pouvez adapter OpenManus à vos besoins :
+
+1. **Étude du Workflow**  
+   - Analysez les logs d'exécution pour comprendre comment l'agent décide, sélectionne et exécute des outils.
+   - Identifiez les modules clés (comme `toolcall.py`, `ReActAgent`, etc.) pour déterminer où intervenir.
+
+2. **Ajout ou Modification d'Outils**  
+   - Étendez la collection d'outils en ajoutant de nouvelles classes dans `ToolCollection`.
+   - Intégrez des fonctionnalités supplémentaires, par exemple, la communication en temps réel via Gemini Live.
+
+3. **Personnalisation de la Logique de Décision**  
+   - Modifiez la méthode `think` pour adapter la logique de sélection des outils selon vos critères.
+   - Ajoutez des messages de log pour une meilleure traçabilité et analyse.
+
+4. **Tests et Itérations**  
+   - Testez chaque modification en observant les logs et le comportement de l'agent.
+   - Affinez la gestion des erreurs et l'optimisation des appels aux API pour garantir un fonctionnement fluide.
+
+---
+
