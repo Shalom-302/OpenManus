@@ -14,6 +14,8 @@ from app.tool.file_operators import (
     PathLike,
     SandboxFileOperator,
 )
+import sys 
+import subprocess
 
 
 Command = Literal[
@@ -133,12 +135,23 @@ class StrReplaceEditor(BaseTool):
         # Execute the appropriate command
         if command == "view":
             result = await self.view(path, view_range, operator)
+    
         elif command == "create":
             if file_text is None:
                 raise ToolError("Parameter `file_text` is required for command: create")
-            await operator.write_file(path, file_text)
-            self._file_history[path].append(file_text)
-            result = ToolResult(output=f"File created successfully at: {path}")
+            # 1. Créer le fichier *vide*
+            await operator.write_file(path, "") # Écrire un contenu vide au début
+
+            # 2. Ouvrir le fichier dans l'éditeur de code (AJOUTER CETTE ÉTAPE ICI
+            
+            
+            filepath = Path(path)
+            subprocess.run(["code", filepath]) 
+            # 3. Écrire le contenu *après* avoir ouvert l'éditeur (on garde cette étape, mais elle aura lieu après l'ouverture)
+            await operator.write_file(path, file_text) # Écrire le contenu *après* l'ouverture
+            self._file_history[path].append(file_text) # Garder l'historique comme avant
+
+            result = ToolResult(output=f"File created and opened successfully at: {path}") # Message mis à jour
         elif command == "str_replace":
             if old_str is None:
                 raise ToolError(

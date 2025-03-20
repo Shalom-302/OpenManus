@@ -123,63 +123,69 @@ un site de ecommerce responsive avec du HTML CSS et JAVASCRIPT
 
 ## Reverse Engineering du Workflow d'Exécution de Manus
 
-Ce section décrit en détail comment OpenManus exécute une tâche, depuis la réception de la demande jusqu'à l'affichage du résultat, afin de mieux comprendre la chaîne d'opérations et vous permettre de créer votre propre agent.
+Ce section décrit en détail comment OpenManus exécute une tâche, depuis la réception de la demande jusqu'à l'affichage du résultat (ou l'exécution d'une action tangible), afin de mieux comprendre la chaîne d'opérations et vous permettre de créer votre propre agent.
 
 ### Workflow Global
 
-1. **Initialisation**  
-   - **Configuration du Logging et Activation de la Télémétrie Anonyme**  
+1. **Initialisation**
+   - **Configuration du Logging et Activation de la Télémétrie Anonyme**
      Au démarrage, OpenManus initialise le système de logging et active la télémétrie anonyme pour suivre l'exécution tout en garantissant la confidentialité.
 
-2. **Réception de la Demande**  
-   - **Saisie de la Commande Utilisateur**  
+2. **Réception de la Demande**
+   - **Saisie de la Commande Utilisateur**
      L'utilisateur saisit sa demande. Par exemple :
      ```
-     un site de ecommerce responsive avec du HTML CSS et JAVASCRIPT
+     crée un fichier python pour afficher "Bonjour OpenManus" et ouvre-le dans mon éditeur
      ```
 
-3. **Appel au Modèle de Langage (LLM)**  
-   - **Interrogation et Traitement**  
+3. **Appel au Modèle de Langage (LLM)**
+   - **Interrogation et Traitement**
      L'agent envoie l'historique des messages et un prompt système au LLM pour générer une réponse initiale. Ce processus inclut la gestion de la consommation de tokens pour chaque étape.
 
-4. **Sélection et Activation des Outils**  
-   - **Choix de l'Outil Approprié**  
-     D'après la réponse du LLM, l'agent sélectionne un ou plusieurs outils à utiliser. Dans notre exemple :
-     - `python_execute` est d'abord activé pour générer le code HTML, CSS et JavaScript.
-   - **Exécution de l'Outil**  
-     L'outil sélectionné est exécuté, par exemple, pour créer un fichier HTML contenant le code généré.
+4. **Sélection et Activation des Outils**
+   - **Choix de l'Outil Approprié**
+     D'après la réponse du LLM, l'agent sélectionne un ou plusieurs outils à utiliser.  **Pour le "live coding" et la création de fichiers locaux :**
+     - `str_replace_editor` est activé avec la commande `create` pour créer un nouveau fichier (ex. : `mon_script.py`) dans l'espace de travail.
+   - **Ouverture Visible de l'Éditeur de Code**
+     L'outil `str_replace_editor`, après avoir créé le fichier, **ouvre VISIBLEMENT l'éditeur de code par défaut de l'utilisateur (ex. : VS Code) avec le fichier nouvellement créé.** C'est l'étape clé pour le "live coding" visuel.
+   - **Écriture du Code dans le Fichier**
+     L'outil `str_replace_editor` écrit ensuite le code généré par le LLM dans le fichier qui est maintenant ouvert dans l'éditeur.
 
-5. **Visualisation avec BrowserUse**  
-   - **Affichage du Résultat**  
-     Après l'exécution, l'outil `browser_use` est appelé pour ouvrir le fichier généré dans un navigateur, permettant à l'utilisateur de visualiser le résultat final.
+5. **Exécution du Code (Optionnel)**
+   - **Utilisation de `python_execute` (ou outil similaire)**
+     Si la demande de l'utilisateur implique l'exécution du code (ex. : "exécute le script"), l'outil `python_execute` est activé pour exécuter le code Python localement et capturer la sortie.
 
-6. **Itération et Affinage (si nécessaire)**  
-   - **Processus Itératif**  
+6. **Affichage du Résultat (ou Action Finale)**
+   - **Présentation du Résultat ou Action Tangible**
+     Selon la tâche, l'agent peut afficher le résultat de l'exécution (ex. : sortie de `python_execute`) dans le terminal, ou l'action tangible est l'ouverture visible de l'éditeur de code avec le fichier prêt à être édité et exécuté par l'utilisateur.
+
+7. **Itération et Affinage (si nécessaire)**
+   - **Processus Itératif**
      Selon la demande, l'agent peut poursuivre avec d'autres étapes pour affiner le résultat ou intégrer des modifications supplémentaires.
 
 ### Analyse Technique du Module `toolcall.py`
 
 Le fichier `toolcall.py` joue un rôle crucial dans l'orchestration des appels aux outils. Voici les points essentiels :
 
-- **Héritage et Objectif**  
+- **Héritage et Objectif**
   La classe `ToolCallAgent` hérite de `ReActAgent` et gère la transformation de la réponse du LLM en actions concrètes via des appels de fonctions (tool calls).
 
-- **Méthode `think`**  
+- **Méthode `think`**
   - Ajoute un prompt de prochaine étape aux messages.
   - Interroge le LLM via `ask_tool` en passant les messages, le prompt système et la liste des outils disponibles.
   - Extrait et loggue les tool calls générés (les outils sélectionnés et leur ordre d'exécution).
 
-- **Méthode `act`**  
+- **Méthode `act`**
   - Pour chaque appel d'outil, exécute la méthode `execute_tool`.
   - Agrège les résultats et les enregistre dans la mémoire de l'agent pour constituer la réponse finale.
   - Loggue l'issue de chaque appel d'outil avec des messages détaillés.
 
-- **Méthode `execute_tool`**  
+- **Méthode `execute_tool`**
   - Valide et parse les arguments (au format JSON) de l'appel.
   - Active l'outil correspondant à partir d'une collection d'outils disponibles.
   - Gère les erreurs et formate le résultat pour l'afficher (ex. : « Observed output of cmd `python_execute` executed: ... »).
 
-- **Gestion des Outils Spéciaux**  
+- **Gestion des Outils Spéciaux**
   La méthode `_handle_special_tool` vérifie si un outil particulier (comme `Terminate`) nécessite un traitement spécial, par exemple pour terminer l'exécution de l'agent.
 
 Ces mécanismes, combinés aux logs détaillés (incluant la consommation de tokens et l'ordre des étapes), offrent une vision claire du fonctionnement interne d'OpenManus et facilitent le reverse engineering pour créer et personnaliser votre propre agent.
@@ -190,21 +196,20 @@ Ces mécanismes, combinés aux logs détaillés (incluant la consommation de tok
 
 En vous appuyant sur l'analyse ci-dessus, vous pouvez adapter OpenManus à vos besoins :
 
-1. **Étude du Workflow**  
+1. **Étude du Workflow**
    - Analysez les logs d'exécution pour comprendre comment l'agent décide, sélectionne et exécute des outils.
    - Identifiez les modules clés (comme `toolcall.py`, `ReActAgent`, etc.) pour déterminer où intervenir.
 
-2. **Ajout ou Modification d'Outils**  
+2. **Ajout ou Modification d'Outils**
    - Étendez la collection d'outils en ajoutant de nouvelles classes dans `ToolCollection`.
    - Intégrez des fonctionnalités supplémentaires, par exemple, la communication en temps réel via Gemini Live.
 
-3. **Personnalisation de la Logique de Décision**  
+3. **Personnalisation de la Logique de Décision**
    - Modifiez la méthode `think` pour adapter la logique de sélection des outils selon vos critères.
    - Ajoutez des messages de log pour une meilleure traçabilité et analyse.
 
-4. **Tests et Itérations**  
+4. **Tests et Itérations**
    - Testez chaque modification en observant les logs et le comportement de l'agent.
    - Affinez la gestion des erreurs et l'optimisation des appels aux API pour garantir un fonctionnement fluide.
 
 ---
-

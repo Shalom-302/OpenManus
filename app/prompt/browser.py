@@ -90,3 +90,4 @@ For browser interactions:
 Consider both what's visible and what might be beyond the current viewport.
 Be methodical - remember your progress and what you've learned so far.
 """
+
